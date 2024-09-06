@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animated Scatter Plot with CSV Data</title>
+    <title>Animated Scatter Plot with Pulsating Effect</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         body {
@@ -20,7 +20,7 @@
     </style>
 </head>
 <body>
-    <h2>Animated Scatter Plot with Trails</h2>
+    <h2>Animated Scatter Plot with Pulsating Effect</h2>
     <svg id="chart" width="900" height="600"></svg>
 
     <script>
@@ -81,24 +81,22 @@
                 .attr("r", 0)  // Start with size 0
                 .attr("fill", d => color(d.region));
 
-            // Animate the bubbles
-            function animateBubbles() {
+            // Pulsating effect
+            function pulsateBubbles() {
                 bubbles
                     .transition()
-                    .duration(1500)  // Grow duration
+                    .duration(1000)  // Duration for growing
                     .attr("r", d => sizeScale(d.inc_trial_conversion))
                     .transition()
-                    .duration(500)   // Transition to reset state
-                    .attr("r", 0)    // Reset to size 0
+                    .duration(1000)  // Duration for shrinking
+                    .attr("r", d => sizeScale(d.inc_trial_conversion) * 0.8)  // Pulsating to a smaller size
                     .on("end", function() {
-                        d3.select(this)  // Ensure the transition is smooth
-                          .attr("r", 0);  // Ensure the radius is reset to 0
-                        setTimeout(animateBubbles, 500);  // Small delay before next loop
+                        pulsateBubbles();  // Restart pulsating
                     });
             }
 
-            // Start the animation
-            animateBubbles();
+            // Start the pulsating animation
+            pulsateBubbles();
         }).catch(function(error) {
             console.log("Error loading CSV file:", error);
         });
