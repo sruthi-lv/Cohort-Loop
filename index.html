@@ -89,9 +89,10 @@
                     .transition()  // Chain transition to shrink back
                     .duration(2000)
                     .attr("r", d => sizeScale(d.inc_trial_conversion))  // Shrink back to original size
-                    .on("end", function() {
-                        // Restart the animation after a short delay
-                        setTimeout(animateBubbles, 500);  // Small delay before next loop
+                    .on("end", function(d, i) {
+                        if (i === data.length - 1) {  // Check if it's the last bubble
+                            setTimeout(animateBubbles, 500);  // Restart the animation after a short delay
+                        }
                     });
             }
 
