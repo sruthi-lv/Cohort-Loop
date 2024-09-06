@@ -88,14 +88,11 @@
                     .duration(1500)  // Grow duration
                     .attr("r", d => sizeScale(d.inc_trial_conversion))
                     .transition()
-                    .duration(500)   // Shrink duration
-                    .attr("r", 0)    // Shrink the bubbles before looping again
+                    .duration(500)   // Transition to reset state
+                    .attr("r", 0)    // Reset to size 0
                     .on("end", function() {
-                        // Restart the animation after a short delay
-                        d3.select(this)
-                          .transition()   // Ensure the transition is smooth and continuous
-                          .duration(0)    // No transition during reset
-                          .attr("r", 0);
+                        d3.select(this)  // Ensure the transition is smooth
+                          .attr("r", 0);  // Ensure the radius is reset to 0
                         setTimeout(animateBubbles, 500);  // Small delay before next loop
                     });
             }
