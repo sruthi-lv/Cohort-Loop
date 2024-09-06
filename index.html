@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animated Scatter Plot with Pulsating Effect</title>
+    <title>Animated Scatter Plot with CSV Data</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         body {
@@ -20,7 +20,7 @@
     </style>
 </head>
 <body>
-    <h2>Animated Scatter Plot with Pulsating Effect</h2>
+    <h2>Animated Scatter Plot</h2>
     <svg id="chart" width="900" height="600"></svg>
 
     <script>
@@ -78,25 +78,25 @@
                 .attr("class", "bubble")
                 .attr("cx", d => xScale(d.Month) + xScale.bandwidth() / 2)
                 .attr("cy", d => yScale(d.inc_trial_conversion))
-                .attr("r", d => sizeScale(d.inc_trial_conversion) * 0.8)  // Start with slightly smaller size
+                .attr("r", d => sizeScale(d.inc_trial_conversion))  // Start with the actual size
                 .attr("fill", d => color(d.region));
 
-            // Pulsating effect
-            function pulsateBubbles() {
-                bubbles
-                    .transition()
-                    .duration(1000)  // Duration for growing
-                    .attr("r", d => sizeScale(d.inc_trial_conversion))  // Grow to max size
-                    .ease(d3.easeLinear)
-                    .transition()
-                    .duration(1000)  // Duration for shrinking
-                    .attr("r", d => sizeScale(d.inc_trial_conversion) * 0.8)  // Shrink to smaller size
-                    .ease(d3.easeLinear)
-                    .on("end", pulsateBubbles);  // Restart pulsating effect
+            // Animate the bubbles
+            function animateBubbles() {
+                bubbles.transition()
+                    .duration(2000)  // Grow duration
+                    .attr("r", d => sizeScale(d.inc_trial_conversion) * 1.5)  // Grow larger than the original size
+                    .transition()  // Chain transition to shrink back
+                    .duration(2000)
+                    .attr("r", d => sizeScale(d.inc_trial_conversion))  // Shrink back to original size
+                    .on("end", function() {
+                        // Restart the animation after a short delay
+                        setTimeout(animateBubbles, 500);  // Small delay before next loop
+                    });
             }
 
-            // Start the pulsating animation
-            pulsateBubbles();
+            // Start the animation
+            animateBubbles();
         }).catch(function(error) {
             console.log("Error loading CSV file:", error);
         });
