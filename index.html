@@ -78,7 +78,7 @@
                 .attr("class", "bubble")
                 .attr("cx", d => xScale(d.Month) + xScale.bandwidth() / 2)
                 .attr("cy", d => yScale(d.inc_trial_conversion))
-                .attr("r", 0)  // Start with size 0
+                .attr("r", d => sizeScale(d.inc_trial_conversion) * 0.8)  // Start with slightly smaller size
                 .attr("fill", d => color(d.region));
 
             // Pulsating effect
@@ -86,13 +86,13 @@
                 bubbles
                     .transition()
                     .duration(1000)  // Duration for growing
-                    .attr("r", d => sizeScale(d.inc_trial_conversion))
+                    .attr("r", d => sizeScale(d.inc_trial_conversion))  // Grow to max size
+                    .ease(d3.easeLinear)
                     .transition()
                     .duration(1000)  // Duration for shrinking
-                    .attr("r", d => sizeScale(d.inc_trial_conversion) * 0.8)  // Pulsating to a smaller size
-                    .on("end", function() {
-                        pulsateBubbles();  // Restart pulsating
-                    });
+                    .attr("r", d => sizeScale(d.inc_trial_conversion) * 0.8)  // Shrink to smaller size
+                    .ease(d3.easeLinear)
+                    .on("end", pulsateBubbles);  // Restart pulsating effect
             }
 
             // Start the pulsating animation
