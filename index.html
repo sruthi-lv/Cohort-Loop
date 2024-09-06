@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animated Scatter Plot with CSV Data</title>
+    <title>Scatter Plot with Category Colors</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         body {
@@ -17,10 +17,24 @@
             stroke: #333;
             stroke-width: 2px;
         }
+        .button-group {
+            margin-bottom: 20px;
+        }
+        button {
+            margin-right: 10px;
+            padding: 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <h2>Animated Scatter Plot</h2>
+    <h2>Scatter Plot with Category Colors</h2>
+    <div class="button-group">
+        <button id="regionButton">Color by Region</button>
+        <button id="partnerButton">Color by Partner Name</button>
+        <button id="verticalButton">Color by Vertical</button>
+    </div>
     <svg id="chart" width="900" height="600"></svg>
 
     <script>
@@ -58,9 +72,6 @@
                 .domain([0, d3.max(data, d => d.inc_trial_conversion)])
                 .range([5, 30]);  // Bubble size range
 
-            // Colors for different categories
-            const color = d3.scaleOrdinal(d3.schemeCategory10);
-
             // Add X axis
             svg.append("g")
                 .attr("transform", `translate(0,${height})`)
@@ -70,34 +81,42 @@
             svg.append("g")
                 .call(d3.axisLeft(yScale).ticks(10).tickFormat(d => d + "%"));
 
-            // Add the bubbles
-            const bubbles = svg.selectAll(".bubble")
+            // Add the bubbles (initially with region colors)
+            let bubbles = svg.selectAll(".bubble")
                 .data(data)
                 .enter()
                 .append("circle")
                 .attr("class", "bubble")
                 .attr("cx", d => xScale(d.Month) + xScale.bandwidth() / 2)
                 .attr("cy", d => yScale(d.inc_trial_conversion))
-                .attr("r", d => sizeScale(d.inc_trial_conversion))  // Start with the actual size
-                .attr("fill", d => color(d.region));
+                .attr("r", d => sizeScale(d.inc_trial_conversion))
+                .attr("fill", d => colorByRegion(d));
 
-            // Animate the bubbles
-            function animateBubbles() {
+            // Color scale functions for different categories
+            const colorByRegion = d3.scaleOrdinal(d3.schemeCategory10);
+            const colorByPartnerName = d3.scaleOrdinal(d3.schemeSet3);
+            const colorByVertical = d3.scaleOrdinal(d3.schemePaired);
+
+            // Update bubbles with new color scale
+            function updateBubblesColor(category) {
                 bubbles.transition()
-                    .duration(2000)  // Grow duration
-                    .attr("r", d => sizeScale(d.inc_trial_conversion) * 1.5)  // Grow larger than the original size
-                    .transition()  // Chain transition to shrink back
-                    .duration(2000)
-                    .attr("r", d => sizeScale(d.inc_trial_conversion))  // Shrink back to original size
-                    .on("end", function(d, i) {
-                        if (i === data.length - 1) {  // Check if it's the last bubble
-                            setTimeout(animateBubbles, 500);  // Restart the animation after a short delay
-                        }
-                    });
+                    .duration(500)  // Smooth transition to new colors
+                    .attr("fill", d => category(d));
             }
 
-            // Start the animation
-            animateBubbles();
+            // Event listeners for buttons
+            d3.select("#regionButton").on("click", function() {
+                updateBubblesColor(d => colorByRegion(d.region));
+            });
+
+            d3.select("#partnerButton").on("click", function() {
+                updateBubblesColor(d => colorByPartnerName(d.partner_name));
+            });
+
+            d3.select("#verticalButton").on("click", function() {
+                updateBubblesColor(d => colorByVertical(d.vertical));
+            });
+
         }).catch(function(error) {
             console.log("Error loading CSV file:", error);
         });
