@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scatter Plot with Category Colors</title>
+    <title>Scatter Plot with Filters</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         body {
@@ -17,23 +17,31 @@
             stroke: #333;
             stroke-width: 2px;
         }
-        .button-group {
+        .filter-container {
             margin-bottom: 20px;
         }
-        button {
-            margin-right: 10px;
+        select {
+            margin-right: 20px;
             padding: 10px;
             font-size: 14px;
-            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <h2>Scatter Plot with Category Colors</h2>
-    <div class="button-group">
-        <button id="regionButton">Color by Region</button>
-        <button id="partnerButton">Color by Partner Name</button>
-        <button id="verticalButton">Color by Vertical</button>
+    <h2>Scatter Plot with Filters</h2>
+    <div class="filter-container">
+        <label for="regionFilter">Region:</label>
+        <select id="regionFilter">
+            <option value="all">All</option>
+        </select>
+        <label for="partnerFilter">Partner Name:</label>
+        <select id="partnerFilter">
+            <option value="all">All</option>
+        </select>
+        <label for="verticalFilter">Vertical:</label>
+        <select id="verticalFilter">
+            <option value="all">All</option>
+        </select>
     </div>
     <svg id="chart" width="900" height="600"></svg>
 
@@ -72,6 +80,8 @@
                 .domain([0, d3.max(data, d => d.inc_trial_conversion)])
                 .range([5, 30]);  // Bubble size range
 
+            const color = d3.scaleOrdinal(d3.schemeCategory10);
+
             // Add X axis
             svg.append("g")
                 .attr("transform", `translate(0,${height})`)
@@ -81,7 +91,12 @@
             svg.append("g")
                 .call(d3.axisLeft(yScale).ticks(10).tickFormat(d => d + "%"));
 
-            // Add the bubbles (initially with region colors)
+            // Populate dropdown filters
+            populateDropdown("regionFilter", data, "region");
+            populateDropdown("partnerFilter", data, "partner_name");
+            populateDropdown("verticalFilter", data, "vertical");
+
+            // Initial scatter plot
             let bubbles = svg.selectAll(".bubble")
                 .data(data)
                 .enter()
@@ -90,32 +105,60 @@
                 .attr("cx", d => xScale(d.Month) + xScale.bandwidth() / 2)
                 .attr("cy", d => yScale(d.inc_trial_conversion))
                 .attr("r", d => sizeScale(d.inc_trial_conversion))
-                .attr("fill", d => colorByRegion(d));
+                .attr("fill", d => color(d.region));
 
-            // Color scale functions for different categories
-            const colorByRegion = d3.scaleOrdinal(d3.schemeCategory10);
-            const colorByPartnerName = d3.scaleOrdinal(d3.schemeSet3);
-            const colorByVertical = d3.scaleOrdinal(d3.schemePaired);
+            // Dropdown change events
+            d3.select("#regionFilter").on("change", updateBubbles);
+            d3.select("#partnerFilter").on("change", updateBubbles);
+            d3.select("#verticalFilter").on("change", updateBubbles);
 
-            // Update bubbles with new color scale
-            function updateBubblesColor(category) {
+            // Update scatter plot based on filters
+            function updateBubbles() {
+                const selectedRegion = d3.select("#regionFilter").property("value");
+                const selectedPartner = d3.select("#partnerFilter").property("value");
+                const selectedVertical = d3.select("#verticalFilter").property("value");
+
+                const filteredData = data.filter(d => {
+                    return (selectedRegion === "all" || d.region === selectedRegion) &&
+                           (selectedPartner === "all" || d.partner_name === selectedPartner) &&
+                           (selectedVertical === "all" || d.vertical === selectedVertical);
+                });
+
+                bubbles = svg.selectAll(".bubble")
+                    .data(filteredData, d => d.Month + d.region + d.partner_name + d.vertical);
+
+                // Exit old elements
+                bubbles.exit().remove();
+
+                // Enter new elements
+                bubbles.enter()
+                    .append("circle")
+                    .attr("class", "bubble")
+                    .attr("cx", d => xScale(d.Month) + xScale.bandwidth() / 2)
+                    .attr("cy", d => yScale(d.inc_trial_conversion))
+                    .attr("r", d => sizeScale(d.inc_trial_conversion))
+                    .attr("fill", d => color(d.region));
+
+                // Update existing elements
                 bubbles.transition()
-                    .duration(500)  // Smooth transition to new colors
-                    .attr("fill", d => category(d));
+                    .duration(500)
+                    .attr("cx", d => xScale(d.Month) + xScale.bandwidth() / 2)
+                    .attr("cy", d => yScale(d.inc_trial_conversion))
+                    .attr("r", d => sizeScale(d.inc_trial_conversion))
+                    .attr("fill", d => color(d.region));
             }
 
-            // Event listeners for buttons
-            d3.select("#regionButton").on("click", function() {
-                updateBubblesColor(d => colorByRegion(d.region));
-            });
+            // Populate dropdowns with unique values from the data
+            function populateDropdown(dropdownId, data, key) {
+                const uniqueValues = Array.from(new Set(data.map(d => d[key])));
+                const dropdown = d3.select(`#${dropdownId}`);
 
-            d3.select("#partnerButton").on("click", function() {
-                updateBubblesColor(d => colorByPartnerName(d.partner_name));
-            });
-
-            d3.select("#verticalButton").on("click", function() {
-                updateBubblesColor(d => colorByVertical(d.vertical));
-            });
+                uniqueValues.forEach(value => {
+                    dropdown.append("option")
+                        .attr("value", value)
+                        .text(value);
+                });
+            }
 
         }).catch(function(error) {
             console.log("Error loading CSV file:", error);
